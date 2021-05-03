@@ -6,3 +6,6 @@
 *.Rproj
 *.html
 *.csv
+*.log
+*.png
+*.svg
