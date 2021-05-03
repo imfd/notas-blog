@@ -1,0 +1,8 @@
+*.ipynb_checkpoints/
+*.Rproj.user/
+*.idea/
+*.RData
+*.Rhistory
+*.Rproj
+*.html
+*.csv
