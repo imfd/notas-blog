@@ -13,7 +13,8 @@ library(readxl)
 
 # aqui extraigo las votaciones de la sesion, el número parece no ser correlativo y va a ir creciendo cada día más
 # se debe automatizar eso
-df_votaciones_sesion <- fromJSON("http://sala.cconstituyente.cl/doGet.asmx/getVotacionesPorSesion?prmSesionId=4065")
+
+df_votaciones_sesion <- fromJSON("http://sala.cconstituyente.cl/doGet.asmx/getVotacionesPorSesion?prmSesionId=4064")
 
 df_votaciones_sesion <- df_votaciones_sesion[["data"]]
 

@@ -7,6 +7,7 @@ library(tidytext)
 library(stringi)
 library(stringr)
 library(readxl)
+library(pscl)
 library(wnominate)
 library(wnomadds)
 
@@ -18,6 +19,7 @@ votos_cc <- list.files(pattern = ".rds") %>%
 
 
 votos_cc$id_votacion <- paste0("bol_",votos_cc$id_votacion)
+
 
 votos_cc <- votos_cc %>%
   pivot_wider(names_from = id_votacion, values_from = tipo_voto)
@@ -54,7 +56,7 @@ parlamentarios <- data.frame(parlamentario=rownames(votos_cc))
 
 legData_party_bol <- votos_cc %>%
   select(coalicion) %>%
-  rename(coalicion=coalicion)
+  rename(party=coalicion)
 
 
 
@@ -65,6 +67,7 @@ votos_cc <- votos_cc  %>%
 
 cols.num <- names(votos_cc)
 votos_cc[cols.num] <- sapply(votos_cc[cols.num],as.numeric)
+
 
 rc_party_bol <- rollcall(data = votos_cc, 
                          legis.names = parlamentarios$parlamentario,
@@ -113,8 +116,13 @@ ggsave(plot = p, "ideal_point_lec.png", width = 22, height = 25)
 
 
 wmoni_party_bol <- wnominate(rc_party_bol, polarity = c(106,66))
+
+
 wmoni_party_bol
+
 plot.coords(wmoni_party_bol)
+
+
 plot.coords(wmoni_party_bol, legend.x = 1, legend.y = 1, plotBy = "party",
             main.title = "W-NOMINATE", d1.title = "Primera Dimensi?n",
             d2.title = "Segunda Dimensi?n")
