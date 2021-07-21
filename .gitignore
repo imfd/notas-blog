@@ -6,3 +6,4 @@
 *.Rproj
 *.csv
 *.log
+.Rproj.user
