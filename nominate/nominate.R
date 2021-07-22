@@ -122,8 +122,8 @@ df_graph$mean<-ave(df_graph$coord,df_graph$coalicion,FUN=mean_valid)
 
 p<-df_graph %>%
   ggplot(aes(reorder(name,coord), coord, label=name)) +
-  xlab("Pacto") + ylab("Puntaje unidimensional")+
-  geom_point(stat='identity', aes(col=coalicion), size=2.5) + scale_color_viridis_d() + coord_flip()
+  xlab("Nombre") + ylab("Puntaje unidimensional")+
+  geom_point(stat='identity', aes(col=coalicion), size=2.5) + scale_color_viridis_d() + coord_flip()+theme_bw()+ theme(legend.position="top")+theme(legend.position = c(0.8, 0.4))
 p 
 
 
@@ -131,7 +131,7 @@ p
 p <-df_graph%>%
   ggplot(aes(reorder(coalicion,mean), coord, label=name)) +
   xlab("Pacto") + ylab("Puntaje unidimensional")+
-  geom_point(stat='identity', aes(col=coalicion), size=2,alpha = 0.4,show.legend = FALSE) + scale_color_viridis_d() + coord_flip()
+  geom_point(stat='identity', aes(col=coalicion), size=2,alpha = 0.4,show.legend = FALSE) + scale_color_viridis_d() + coord_flip()+ theme_bw()
 p
 
 
