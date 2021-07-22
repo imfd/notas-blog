@@ -1,6 +1,3 @@
-
-
-
 library(tidyverse)
 library(rvest)
 library(tidytext)
@@ -55,7 +52,7 @@ parlamentarios <- data.frame(parlamentario=rownames(votos_cc))
 legData_party_bol <- votos_cc %>%
   select(coalicion) %>%
   rename(coalicion=coalicion)
-
+colnames(legData_party_bol) <- 'party'
 
 
 
@@ -101,7 +98,7 @@ pp <- pp %>%
 
 p <-pp %>%
   ggplot(aes(reorder(name_voter,D1), D1, label=name_voter)) +
-  geom_point(stat='identity', aes(col=coalicion), size=2.5) + scale_color_viridis_d() + coord_flip()
+  geom_point(stat='identity', aes(col=party), size=2.5) + scale_color_viridis_d() + coord_flip()
 p
 
 ggsave(plot = p, "ideal_point_lec.png", width = 22, height = 25)
