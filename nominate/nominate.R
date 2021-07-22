@@ -10,7 +10,6 @@ library(readxl)
 library(wnominate)
 library(wnomadds)
 
-
 votos_cc <- list.files(pattern = ".rds") %>%
   map(readRDS) %>% 
   bind_rows()
@@ -109,15 +108,40 @@ ggsave(plot = p, "ideal_point_lec.png", width = 22, height = 25)
 
 ##########################
 ##########################
+
+# 1D usando wmominate #Omite dos casos (Squella y Harboe)
+wmoni_party_bol <- wnominate(rc_party_bol, polarity = 106,dims=1)
+
+# Reconstruccion usando datos paquete wnominate
+
+df_graph <- data.frame(name=rownames(wmoni_party_bol$legislators),coalicion=wmoni_party_bol$legislators$coalicion,coord=wmoni_party_bol$legislators$coord1D)
+# Crea función mean na.omit
+mean_valid<-function(x){mean(na.omit(x))}
+#Añade columna mean na.omit
+df_graph$mean<-ave(df_graph$coord,df_graph$coalicion,FUN=mean_valid)
+
+p<-df_graph %>%
+  ggplot(aes(reorder(name,coord), coord, label=name)) +
+  xlab("Pacto") + ylab("Puntaje unidimensional")+
+  geom_point(stat='identity', aes(col=coalicion), size=2.5) + scale_color_viridis_d() + coord_flip()
+p 
+
+
+# Filas por coalicion
+p <-df_graph%>%
+  ggplot(aes(reorder(coalicion,mean), coord, label=name)) +
+  xlab("Pacto") + ylab("Puntaje unidimensional")+
+  geom_point(stat='identity', aes(col=coalicion), size=2,alpha = 0.4,show.legend = FALSE) + scale_color_viridis_d() + coord_flip()
+p
+
+
 # 2D
-
-
 wmoni_party_bol <- wnominate(rc_party_bol, polarity = c(106,66))
 wmoni_party_bol
 plot.coords(wmoni_party_bol)
-plot.coords(wmoni_party_bol, legend.x = 1, legend.y = 1, plotBy = "party",
-            main.title = "W-NOMINATE", d1.title = "Primera Dimensi?n",
-            d2.title = "Segunda Dimensi?n")
+plot.coords(wmoni_party_bol, legend.x = 1, legend.y = 1, plotBy = "coalicion",
+            main.title = "W-NOMINATE", d1.title = "Primera Dimensión",
+            d2.title = "Segunda Dimensión")
 
 
 
