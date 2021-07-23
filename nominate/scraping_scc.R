@@ -11,9 +11,27 @@ library(stringi)
 library(stringr)
 library(readxl)
 
+sesiones_json<- fromJSON("http://sala.cconstituyente.cl/doGet.asmx/getSesiones")
+sesiones_df<- data.frame(numero=sesiones_json[["data"]][["Numero"]],id=sesiones_json[["data"]][["Id"]],fechatexto=sesiones_json[["data"]][["FechaTexto"]])
+b<-vector()
+for(i in 1:length(sesiones_df$id)){sesiones_df$n_votaciones[i]<-eval(parse(text=paste0('NROW(fromJSON("http://sala.cconstituyente.cl/doGet.asmx/getVotacionesPorSesion?prmSesionId=',sesiones_df$id[i],'")[["data"]])')))}
+
+votaciones<-list()
+for(i in 1:length(sesiones_df$id)){votaciones[[i]]<-eval(parse(text=paste0('fromJSON("http://sala.cconstituyente.cl/doGet.asmx/getVotacionesPorSesion?prmSesionId=',sesiones_df$id[i],'")[["data"]]')))}
+votaciones_df<-Reduce(bind_rows, votaciones)
+
+
+
+
+
+
+
+
+
+
 # aqui extraigo las votaciones de la sesion, el número parece no ser correlativo y va a ir creciendo cada día más
 # se debe automatizar eso
-df_votaciones_sesion <- fromJSON("http://sala.cconstituyente.cl/doGet.asmx/getVotacionesPorSesion?prmSesionId=4065")
+df_votaciones_sesion <- fromJSON("http://sala.cconstituyente.cl/doGet.asmx/getVotacionesPorSesion?prmSesionId=4062")
 
 df_votaciones_sesion <- df_votaciones_sesion[["data"]]
 
