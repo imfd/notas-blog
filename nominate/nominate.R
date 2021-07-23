@@ -110,40 +110,46 @@ ggsave(plot = p, "ideal_point_lec.png", width = 22, height = 25)
 ##########################
 
 # 1D usando wmominate #Omite dos casos (Squella y Harboe)
-wmoni_party_bol <- wnominate(rc_party_bol, polarity = 106,dims=1)
+
+wmoni_party_bol <- wnominate(rc_party_bol, polarity = 106,dims=1,trials = 200)
 
 # Reconstruccion usando datos paquete wnominate
 
-df_graph <- data.frame(name=rownames(wmoni_party_bol$legislators),coalicion=wmoni_party_bol$legislators$coalicion,coord=wmoni_party_bol$legislators$coord1D)
-# Crea función mean na.omit
-mean_valid<-function(x){mean(na.omit(x))}
-#Añade columna mean na.omit
-df_graph$mean<-ave(df_graph$coord,df_graph$coalicion,FUN=mean_valid)
+df_graph <- data.frame(name=rownames(wmoni_party_bol$legislators),coalicion=wmoni_party_bol$legislators$coalicion,coord=wmoni_party_bol$legislators$coord1D,se=wmoni_party_bol$legislators$se1D)
+
+# Crea funciones mean y sd y las agrega como columnas
+
+mean_valid<-function(x){round(mean(na.omit(x)),3)}
+sd_valid<-function(x){round(sd(x,na.rm=TRUE),3)}
+df_graph$mean_party<-ave(df_graph$coord,df_graph$coalicion,FUN=mean_valid)
+df_graph$sd_party<-ave(df_graph$coord,df_graph$coalicion,FUN=sd_valid)
+
+# Crea columna resumen
+
+for (i in 1:length(df_graph$name)){df_graph$gral[i]<-paste0(df_graph$coalicion[i],'\n Prom:',df_graph$mean[i],' (',df_graph$sd[i],')')}
+
+# Plot individual 1D
 
 p<-df_graph %>%
   ggplot(aes(reorder(name,coord), coord, label=name)) +
   xlab("Nombre") + ylab("Puntaje unidimensional")+
-  geom_point(stat='identity', aes(col=coalicion), size=2.5) + scale_color_viridis_d() + coord_flip()+theme_bw()+ theme(legend.position="top")+theme(legend.position = c(0.8, 0.4))
-p 
+  geom_point(stat='identity', aes(col=coalicion), size=2.5) + scale_color_viridis_d() + coord_flip()+theme_bw()+ theme(legend.position="top")+theme(legend.position = c(0.8, 0.4))+geom_errorbar(aes(ymin=coord-se, ymax=coord+se), width=.2,position=position_dodge(0.05))
+p
 
+# Plot por coalicion 1D
 
-# Filas por coalicion
 p <-df_graph%>%
-  ggplot(aes(reorder(coalicion,mean), coord, label=name)) +
+  ggplot(aes(reorder(gral,mean_party), coord, label=name)) +
   xlab("Pacto") + ylab("Puntaje unidimensional")+
   geom_point(stat='identity', aes(col=coalicion), size=2,alpha = 0.4,show.legend = FALSE) + scale_color_viridis_d() + coord_flip()+ theme_bw()
 p
 
 
-# 2D
-wmoni_party_bol <- wnominate(rc_party_bol, polarity = c(106,66))
-wmoni_party_bol
-plot.coords(wmoni_party_bol)
-plot.coords(wmoni_party_bol, legend.x = 1, legend.y = 1, plotBy = "coalicion",
+# Plot 2D
+
+wmoni_party_bol_2d <- wnominate(rc_party_bol, polarity = c(106,66),trials=200)
+wmoni_party_bol_2d
+plot.coords(wmoni_party_bol_2d)
+plot.coords(wmoni_party_bol_2d, legend.x = 1, legend.y = 1, plotBy = "coalicion",
             main.title = "W-NOMINATE", d1.title = "Primera Dimensión",
             d2.title = "Segunda Dimensión")
-
-
-
-
-
