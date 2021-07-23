@@ -24,6 +24,9 @@ votos_cc$id_votacion <- paste0("bol_",votos_cc$id_votacion)
 votos_cc <- votos_cc %>%
   pivot_wider(names_from = id_votacion, values_from = tipo_voto)
 
+#votos_cc <- read.csv("https://raw.githubusercontent.com/tresquintos/tresquintos.github.io/master/datos/convenci%C3%B3n/cc%20rollcall.csv")
+
+
 votos_cc <- as.data.frame(votos_cc)
 votos_cc[votos_cc=="NULL"] = 'NA'
 votos_cc[votos_cc=="A Favor"] <- "1"
@@ -42,7 +45,7 @@ names(votos_cc_first_part)
 votos_cc <- votos_cc %>% 
   left_join(votos_cc_first_part %>% select(-c(glosa_cand)),by="nombres_cc")
 
-
+votos_cc <- votos_cc[,-c(2:36)]
 ##
 
 
@@ -78,10 +81,12 @@ rc_party_bol <- rollcall(data = votos_cc,
 rc_party_bol
 
 
+wmoni_party_bol <- wnominate(rc_party_bol, polarity = c(106,66))
 
-ideal_1 <- ideal(rc_party_bol, d=1) # ideal point
+ideal_1 <- wnominate(rc_party_bol, polarity = c(106,55)) # ideal point
 ideal_1
 
+summary(ideal_1)
 
 
 
@@ -122,7 +127,7 @@ wmoni_party_bol
 
 plot.coords(wmoni_party_bol)
 
-
+coords <- wmoni_party_bol$legislators
 plot.coords(wmoni_party_bol, legend.x = 1, legend.y = 1, plotBy = "party",
             main.title = "W-NOMINATE", d1.title = "Primera Dimensi?n",
             d2.title = "Segunda Dimensi?n")
