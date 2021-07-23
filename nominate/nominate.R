@@ -1,3 +1,5 @@
+
+# Carga de librerías requeridas
 library(coda)
 library(purrr)
 library(dplyr)
@@ -10,17 +12,20 @@ library(readxl)
 library(wnominate)
 library(wnomadds)
 
+# Carga objetos con votaciones
 votos_cc <- list.files(pattern = ".rds") %>%
   map(readRDS) %>% 
   bind_rows()
 
 
-
+# Agrega id de votación por fila 
 votos_cc$id_votacion <- paste0("bol_",votos_cc$id_votacion)
 
+# Transforma a columnas IDs de votación
 votos_cc <- votos_cc %>%
   pivot_wider(names_from = id_votacion, values_from = tipo_voto)
 
+# Recodificación votación
 votos_cc <- as.data.frame(votos_cc)
 votos_cc[votos_cc=="NULL"] = 'NA'
 votos_cc[votos_cc=="A Favor"] <- "1"
@@ -30,19 +35,17 @@ votos_cc[votos_cc=="Abstencion"] <- "9"
 
 
 
-# aqui antes transcribimos las votaciones de declaracion sobre los presos y todas las votaciones de eleccion de la mesa de la CC
+# Carga de votaciones que no están aún en sistema online. Transcripción manual.
 votos_cc_first_part <- read_delim("https://storage.googleapis.com/notas-blog-public/nominate/votos_cc_first_part.csv", 
                                   ";", escape_double = FALSE, locale = locale(encoding = "latin1"), 
                                   trim_ws = TRUE)
-names(votos_cc_first_part)
 
+# Join dfs
 votos_cc <- votos_cc %>% 
   left_join(votos_cc_first_part %>% select(-c(glosa_cand)),by="nombres_cc")
 
 
-##
-
-
+# Asignación nombre filas
 votos_cc <-  votos_cc %>%
   column_to_rownames("nombres_cc")
 
@@ -71,42 +74,9 @@ rc_party_bol <- rollcall(data = votos_cc,
                          legis.data = legData_party_bol,
                          yea = 1, nay = 6, missing = 9, notInLegis = NA)
 
-rc_party_bol
-
-
-
-ideal_1 <- ideal(rc_party_bol, d=1) # ideal point
-ideal_1
-
-
-
-
-plot(ideal_1)
-
-
-
-pp <- data.frame(ideal_1$xbar)
-
-
-
-legData_party_bol <- legData_party_bol %>%
-  rownames_to_column(var="name_voter")
-
-pp <- pp %>%
-  rownames_to_column(var="name_voter")
-
-pp <- pp %>% 
-  left_join(legData_party_bol, by="name_voter")
-
-p <-pp %>%
-  ggplot(aes(reorder(name_voter,D1), D1, label=name_voter)) +
-  geom_point(stat='identity', aes(col=coalicion), size=2.5) + scale_color_viridis_d() + coord_flip()
-p
-
-ggsave(plot = p, "ideal_point_lec.png", width = 22, height = 25)
-
 
 ##########################
+# W-Nominate - Plots
 ##########################
 
 # 1D usando wmominate #Omite dos casos (Squella y Harboe)
@@ -128,7 +98,7 @@ df_graph$sd_party<-ave(df_graph$coord,df_graph$coalicion,FUN=sd_valid)
 
 for (i in 1:length(df_graph$name)){df_graph$gral[i]<-paste0(df_graph$coalicion[i],'\n Prom:',df_graph$mean[i],' (',df_graph$sd[i],')')}
 
-# Plot individual 1D
+# Plot W-Nominate (individual) 1 Dimensión
 
 p<-df_graph %>%
   ggplot(aes(reorder(name,coord), coord, label=name)) +
@@ -136,7 +106,7 @@ p<-df_graph %>%
   geom_point(stat='identity', aes(col=coalicion), size=2.5) + scale_color_viridis_d() + coord_flip()+theme_bw()+ theme(legend.position="top")+theme(legend.position = c(0.8, 0.4))+geom_errorbar(aes(ymin=coord-se, ymax=coord+se), width=.2,position=position_dodge(0.05))
 p
 
-# Plot por coalicion 1D
+# Plot W-Nominate por coalicion 1 Dimensión
 
 p <-df_graph%>%
   ggplot(aes(reorder(gral,mean_party), coord, label=name)) +
@@ -145,7 +115,7 @@ p <-df_graph%>%
 p
 
 
-# Plot 2D
+# Plot W-Nominate 2 Dimensiones
 
 wmoni_party_bol_2d <- wnominate(rc_party_bol, polarity = c(106,66),trials=200)
 wmoni_party_bol_2d

@@ -19,6 +19,7 @@ for(i in 1:length(sesiones_df$id)){sesiones_df$n_votaciones[i]<-eval(parse(text=
 votaciones<-list()
 for(i in 1:length(sesiones_df$id)){votaciones[[i]]<-eval(parse(text=paste0('fromJSON("http://sala.cconstituyente.cl/doGet.asmx/getVotacionesPorSesion?prmSesionId=',sesiones_df$id[i],'")[["data"]]')))}
 votaciones_df<-Reduce(bind_rows, votaciones)
+votaciones_df$url<-paste0("https://sala.cconstituyente.cl/views/VotacionDetalle.aspx?prmVotacionId=",votaciones_df$Id)
 
 
 
