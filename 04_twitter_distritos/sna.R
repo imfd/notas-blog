@@ -13,6 +13,16 @@ nodes_cc <- read_csv("https://storage.googleapis.com/notas-blog-public/04%20-%20
 edgelist_cc <- read_csv("https://storage.googleapis.com/notas-blog-public/04%20-%20Red%20Distrital%20Twitter/edgelist_cc.csv") %>% select(-1)
 candidates_servel <- read_csv("https://storage.googleapis.com/notas-blog-public/04%20-%20Red%20Distrital%20Twitter/candidates_servel.csv")
 
+
+
+library(tidyverse)
+library(rtweet)
+library(readr)
+library(igraph)
+library(ggplot2)
+
+
+
 # lookup all nodes
 
 nodes_df <- lookup_users(nodes_cc$id)
@@ -183,6 +193,20 @@ plot(f1,
      vertex.label= V(f1)$name,
      vertex.size = V(f1)$Popularity*.003, vertex.label.size=.1)
 
-legend("topleft",legend=c("Otros distritos", "Distrito más seguido"), pch=1,col=1:2, cex=0.8)
+#legend("topleft",
+ #      legend = desc(-degree(f1,mode = "in")),
+  #     col = degree(f1,mode = "in"),
+   #    pch = 19,
+    #   cex = 0.8,
+     #  title = "Degree",
+      # bg="transparent",
+      # bty = "n")
+
+legend("topleft",legend=c("Otros distritos", "Distrito más seguido"), pch=20,col=1:2, cex=0.8)
 
 dev.off()
+
+plot(degree(f1,mode = "in"))
+legend("right",
+       legend = desc(degree(f1,mode = "in")),
+       col=degree(f1,mode = "in"))
