@@ -416,8 +416,7 @@ votos_coalicion_efectividad_tt$Constituyente <- str_to_title(votos_coalicion_efe
 
 p <- DT::datatable(votos_coalicion_efectividad_tt)
 
-saveWidget(p, file="output/index.html")
-
+p
 
 
 
@@ -426,7 +425,6 @@ saveWidget(p, file="output/index.html")
 
 
 # afavor, encontra, abs
-
 
 apruebas <- ps %>%
   filter(tipo_voto=='Aprueba') %>%
@@ -459,5 +457,5 @@ abstencion
 p <- gridExtra::grid.arrange(apruebas, rechazo, abstencion, ncol=3)
 
 
-ggsave(plot = p, "plot_tipo_voto.png", width = 16, height = 9)
+ggsave(plot = p, "output/plot_tipo_voto.png", width = 16, height = 9)
 
