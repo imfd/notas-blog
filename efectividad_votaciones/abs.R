@@ -1,23 +1,20 @@
 
 
 # Carga de librerías requeridas
-library(coda)
 library(purrr)
-library(dplyr)
 library(tidyverse)
 library(rvest)
 library(tidytext)
 library(stringi)
 library(stringr)
 library(readxl)
-library(wnominate)
-library(wnomadds)
 
 # Carga objeto con votaciones (Fuente: sala.cconstituyente.cl)
-votos_cc <- readRDS("C:/Users/Daniel/Downloads/votos_convencionales_df.rds")
-
+votos_cc <- read_rds("input/votos_convencionales_df.rds")
+votaciones_df <- read_rds("input/votaciones_df.rds")
 # Carga de votaciones que no están aún en sistema online. Transcripción manual.
 votos_cc_first_part <- read_delim("https://storage.googleapis.com/notas-blog-public/nominate/votos_cc_first_part.csv",";", escape_double = FALSE, locale = locale(encoding = "latin1"), trim_ws = TRUE) %>% select(c(nombres_cc,primera_dec_presos_01,segunda_dec_presos_01))
+
 
 votos_cc_first_part<-votos_cc_first_part %>% pivot_longer(c(primera_dec_presos_01,segunda_dec_presos_01), values_to = "tipo_voto",names_to = "id_votacion") %>%.[,c(1,3,2)]
 
@@ -262,15 +259,6 @@ for (i in 1:155) {
 ps2_v2 <- ps2_v2 %>% left_join(veces_convencional_all, by="nombres_cc")
 
 
-
-
-
-
-
-
-
-
-
 veces_convencional_all <- data.frame()
 
 #  votaciones abstiene con rechazo
@@ -306,17 +294,19 @@ ps2_v2 <- ps2_v2 %>% left_join(veces_convencional_all, by="nombres_cc")
 ######################################
 
 
-votos_efectivos <- ps2_v2 %>% 
+
+
+votos_efectivos <- ps2_v2 %>%  
   select(nombres_cc, Aprueba, Rechaza, Abstiene,veces_abstiene_to_rechazar, veces_rechaza_to_rechazar, veces_aprueba_to_aprobar) %>%
   mutate(votaciones_aprobadas=65, 
          votaciones_rechazadas=48)
 
+votos_cc_first_part <- read_excel("input/agrupamientos.xlsx")
 
-votos_cc_first_part <- read_delim("https://storage.googleapis.com/notas-blog-public/nominate/votos_cc_first_part.csv",";", 
-                                  escape_double = FALSE, locale = locale(encoding = "latin1"), trim_ws = TRUE) 
+names(votos_cc_first_part)
 
 votos_coalicion <- votos_cc_first_part %>%
-  select(nombres_cc,coalicion )
+  select(nombres_cc,cupo, coalicion_actual  )
 
 
 votos_coalicion$nombres_cc <- tolower(votos_coalicion$nombres_cc)
@@ -334,40 +324,116 @@ votos_coalicion_efectividad <- votos_coalicion_efectividad %>%
 
 votos_coalicion_efectividad <- data.frame(votos_coalicion_efectividad)
 
+
+votos_coalicion_efectividad <- votos_coalicion_efectividad %>%
+  rowwise() %>%
+  mutate(suma_aprueba_to_aprueba_rechaza_to_rechaza=sum(veces_aprueba_to_aprobar,veces_rechaza_to_rechazar, na.rm = TRUE))
+votos_coalicion_efectividad <- as.data.frame(votos_coalicion_efectividad)
+
+votos_coalicion_efectividad <- votos_coalicion_efectividad %>%
+  mutate(perct_efectividad=suma_aprueba_to_aprueba_rechaza_to_rechaza/113*100)
+
+
 # visualizar
 
-p10 <- ggplot(votos_coalicion_efectividad, aes(x = coalicion, y =prop_aprobacion, fill=coalicion)) +scale_fill_viridis_d() + theme_bw()+
-  theme(legend.position = 'none')+
-  geom_boxplot() + scale_y_continuous(limits=c(0,100)) + ggtitle("% de efectividad de votar A favor para aprobar")
-p10
+unique(votos_coalicion_efectividad$cupo)
+
+votos_coalicion_efectividad$cupo[votos_coalicion_efectividad$cupo=='Resto de lista']<- "Lis. Apruebo(resto)"
+
+fac <- with(votos_coalicion_efectividad, reorder(cupo,desc(perct_efectividad)), median, order = TRUE)
+votos_coalicion_efectividad$cupo <- factor(votos_coalicion_efectividad$cupo, levels = levels(fac))
+efectividad_general <- ggplot(votos_coalicion_efectividad , 
+            aes(cupo,perct_efectividad, fill=cupo))+
+  geom_boxplot()+
+  scale_y_continuous(limits=c(0,100)) +ggtitle("% de efectividad de votaciones")+ xlab("Cupo (original)") + ylab("%")+
+  theme(axis.text.x=element_text(angle=90, hjust=1, size=6))+
+  scale_x_discrete(labels=setNames(as.character(votos_coalicion_efectividad$cupo), votos_coalicion_efectividad$cupo)) +
+  scale_fill_manual(values = c("steelblue","steelblue","steelblue","steelblue","steelblue",
+                               "steelblue","steelblue","steelblue", "steelblue")) + theme_bw()+ 
+  theme(legend.position = 'none',axis.text.x=element_text(size=16), axis.text.y=element_text(size=15), plot.title = element_text(size=22))
+
+efectividad_general
+
+
+ggsave(plot=efectividad_general,"output/efectividad_general.png", width=20, height = 14)
+
+
+
+############# tabla resumen
+
+tabla_show <- data.frame()
+
+names <- as.character(unique(votos_coalicion_efectividad$cupo))
+
+for (i in 1:9) {
+  ldp <- votos_coalicion_efectividad %>%
+    filter(cupo==names[i])
+  
+  
+  df <- data.frame(unclass(summary(ldp$perct_efectividad)), check.names = FALSE, stringsAsFactors = FALSE) %>% 
+    rownames_to_column("measure") 
+  
+  df <- df %>% rename(value=`unclass(summary(ldp$perct_efectividad))`) %>%
+    pivot_wider(names_from = measure, values_from = value) %>% mutate(cupo=names[i]) %>%
+    select(cupo, everything())
+  
+  
+  tabla_show <- rbind(tabla_show, df)
+  
+  
+  
+}
+
+tabla_show[,-1] <-round(tabla_show[,-1],2)
+
+tabla_show
+
+
+
+# tabla interactiva
+
+votos_coalicion_efectividad_tt<- votos_coalicion_efectividad %>%
+  rename(Constituyente=nombres_cc,Cupo=cupo, A_Favor=Aprueba, En_Contra=Rechaza,
+       Abstenciones=Abstiene,votos_efectivos_A_Favor=veces_aprueba_to_aprobar, 
+       votos_efectivos_En_Contra= veces_rechaza_to_rechazar,Votos_Efectivos_General=suma_aprueba_to_aprueba_rechaza_to_rechaza,
+       Efectividad=perct_efectividad)
+
+votos_coalicion_efectividad_tt <- votos_coalicion_efectividad_tt %>%
+  select(Constituyente, Cupo, A_Favor, En_Contra,Abstenciones,votos_efectivos_A_Favor,
+         votos_efectivos_En_Contra, Votos_Efectivos_General, Efectividad)
+
+votos_coalicion_efectividad_tt$Efectividad <- round(votos_coalicion_efectividad_tt$Efectividad, 2)
+
+
+votos_coalicion_efectividad_tt$Efectividad<- paste0(votos_coalicion_efectividad_tt$Efectividad,"%")
+
+
+library(DT)
+votos_coalicion_efectividad_tt <- votos_coalicion_efectividad_tt %>% arrange(desc(Efectividad))
+
+votos_coalicion_efectividad_tt$Constituyente <- str_to_title(votos_coalicion_efectividad_tt$Constituyente)
+
+
+p <- DT::datatable(votos_coalicion_efectividad_tt)
+
+saveWidget(p, file="output/index.html")
 
 
 
 
 
-p11 <- ggplot(votos_coalicion_efectividad, aes(x = coalicion, y =prop_rechazo, fill=coalicion)) + scale_fill_viridis_d() + theme_bw()+
-  geom_boxplot() + scale_y_continuous(limits=c(0,100)) + ggtitle("% de efectividad de votar En Contra+Abstencion para rechazar")
-
-p11
 
 
 
-pp <- gridExtra::grid.arrange(p10, p11, ncol=2)
-
-
-ggsave(plot=pp, "plot2.png", width = 21, height = 11)
-
-
-# a mayor abstención, menor aprobacion, se usará para reforzar el rechazo sin mancharse? 
-
-
+# afavor, encontra, abs
 
 
 apruebas <- ps %>%
   filter(tipo_voto=='Aprueba') %>%
   arrange(desc(n)) %>% top_n(10) %>%
-    ggplot(aes(reorder(nombres_cc, n), n, size=5)) + ylab("Frecuencia") + xlab("Constituyente") +
-  geom_point(stat = "identity") + coord_flip() + theme_minimal() + theme(legend.position = 'none') +
+  ggplot(aes(reorder(nombres_cc, n), n, size=5)) + ylab("Frecuencia") + xlab("Constituyente") +
+  scale_y_continuous(limits = c(0,113))  +
+  geom_point(stat = "identity") + coord_flip() + theme_minimal() + theme(axis.text.y=element_text(size=14),legend.position = 'none') +
   ggtitle("A Favor")
 apruebas
 
@@ -375,7 +441,8 @@ rechazo <- ps %>%
   filter(tipo_voto=='Rechaza') %>%
   arrange(desc(n)) %>% top_n(10) %>%
   ggplot(aes(reorder(nombres_cc, n), n, size=5)) + ylab("Frecuencia") + xlab("Constituyente") +
-  geom_point(stat = "identity") + coord_flip() + theme_minimal() + theme(legend.position = 'none') +
+  scale_y_continuous(limits = c(0,113)) +
+  geom_point(stat = "identity") + coord_flip() + theme_minimal() + theme(axis.text.y=element_text(size=14),legend.position = 'none') +
   ggtitle("En Contra")
 rechazo
 
@@ -383,11 +450,14 @@ abstencion <- ps %>%
   filter(tipo_voto=='Abstiene') %>%
   arrange(desc(n)) %>% top_n(10) %>%
   ggplot(aes(reorder(nombres_cc, n), n, size=5)) + ylab("Frecuencia") + xlab("Constituyente") +
-  geom_point(stat = "identity") + coord_flip() + theme_minimal() + theme(legend.position = 'none') +
+  scale_y_continuous(limits = c(0,113)) +
+  geom_point(stat = "identity") + coord_flip() + theme_minimal() + theme(axis.text.y=element_text(size=14),legend.position = 'none') +
   ggtitle("Abstención")
 abstencion
 
 
 p <- gridExtra::grid.arrange(apruebas, rechazo, abstencion, ncol=3)
 
+
+ggsave(plot = p, "plot_tipo_voto.png", width = 16, height = 9)
 
