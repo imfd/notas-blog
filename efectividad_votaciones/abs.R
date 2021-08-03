@@ -339,20 +339,23 @@ votos_coalicion_efectividad <- votos_coalicion_efectividad %>%
 unique(votos_coalicion_efectividad$cupo)
 
 votos_coalicion_efectividad$cupo[votos_coalicion_efectividad$cupo=='Resto de lista']<- "Lis. Apruebo(resto)"
+library(forcats)
 
-fac <- with(votos_coalicion_efectividad, reorder(cupo,desc(perct_efectividad)), median, order = TRUE)
-votos_coalicion_efectividad$cupo <- factor(votos_coalicion_efectividad$cupo, levels = levels(fac))
-efectividad_general <- ggplot(votos_coalicion_efectividad , 
-            aes(cupo,perct_efectividad, fill=cupo))+
-  geom_boxplot()+
-  scale_y_continuous(limits=c(0,100)) +ggtitle("% de efectividad de votaciones")+ xlab("Cupo (original)") + ylab("%")+
-  theme(axis.text.x=element_text(angle=90, hjust=1, size=6))+
-  scale_x_discrete(labels=setNames(as.character(votos_coalicion_efectividad$cupo), votos_coalicion_efectividad$cupo)) +
+votos_coalicion_efectividad$nombres_cc <- str_to_title(votos_coalicion_efectividad$nombres_cc)
+votos_coalicion_efectividad$perct_efectividad <- round(votos_coalicion_efectividad$perct_efectividad,2)
+efectividad_general <- ggplot(votos_coalicion_efectividad %>%
+                                mutate(Grupo=fct_reorder(cupo, perct_efectividad, .fun = median, .desc = TRUE)) %>%
+                                rename(Efectividad=perct_efectividad, Nombre=nombres_cc), 
+                              aes(x = Grupo,
+                                  y = Efectividad, fill=Grupo)) +geom_boxplot()+ #geom_point(aes(label=Nombre)) +
+  scale_y_continuous(limits=c(0,100)) +ggtitle("% de efectividad de votaciones")+ xlab("Alianzas") + ylab("%")+
+  theme(axis.text.x=element_text(angle=90, hjust=1, size=9))+
   scale_fill_manual(values = c("steelblue","steelblue","steelblue","steelblue","steelblue",
                                "steelblue","steelblue","steelblue", "steelblue")) + theme_bw()+ 
   theme(legend.position = 'none',axis.text.x=element_text(size=16), axis.text.y=element_text(size=15), plot.title = element_text(size=22))
 
 efectividad_general
+
 
 
 ggsave(plot=efectividad_general,"output/efectividad_general.png", width=20, height = 14)
@@ -420,42 +423,4 @@ p
 
 
 
-
-
-
-
-# afavor, encontra, abs
-
-apruebas <- ps %>%
-  filter(tipo_voto=='Aprueba') %>%
-  arrange(desc(n)) %>% top_n(10) %>%
-  ggplot(aes(reorder(nombres_cc, n), n, size=5)) + ylab("Frecuencia") + xlab("Constituyente") +
-  scale_y_continuous(limits = c(0,113))  +
-  geom_point(stat = "identity") + coord_flip() + theme_minimal() + theme(axis.text.y=element_text(size=14),legend.position = 'none') +
-  ggtitle("A Favor")
-apruebas
-
-rechazo <- ps %>%
-  filter(tipo_voto=='Rechaza') %>%
-  arrange(desc(n)) %>% top_n(10) %>%
-  ggplot(aes(reorder(nombres_cc, n), n, size=5)) + ylab("Frecuencia") + xlab("Constituyente") +
-  scale_y_continuous(limits = c(0,113)) +
-  geom_point(stat = "identity") + coord_flip() + theme_minimal() + theme(axis.text.y=element_text(size=14),legend.position = 'none') +
-  ggtitle("En Contra")
-rechazo
-
-abstencion <- ps %>%
-  filter(tipo_voto=='Abstiene') %>%
-  arrange(desc(n)) %>% top_n(10) %>%
-  ggplot(aes(reorder(nombres_cc, n), n, size=5)) + ylab("Frecuencia") + xlab("Constituyente") +
-  scale_y_continuous(limits = c(0,113)) +
-  geom_point(stat = "identity") + coord_flip() + theme_minimal() + theme(axis.text.y=element_text(size=14),legend.position = 'none') +
-  ggtitle("Abstención")
-abstencion
-
-
-p <- gridExtra::grid.arrange(apruebas, rechazo, abstencion, ncol=3)
-
-
-ggsave(plot = p, "output/plot_tipo_voto.png", width = 16, height = 9)
 
