@@ -306,7 +306,7 @@ votos_cc_first_part <- read_excel("input/agrupamientos.xlsx")
 names(votos_cc_first_part)
 
 votos_coalicion <- votos_cc_first_part %>%
-  select(nombres_cc,cupo, coalicion_actual  )
+  select(nombres_cc,cupo2, coalicion_actual  )
 
 
 votos_coalicion$nombres_cc <- tolower(votos_coalicion$nombres_cc)
@@ -336,29 +336,33 @@ votos_coalicion_efectividad <- votos_coalicion_efectividad %>%
 
 # visualizar
 
-unique(votos_coalicion_efectividad$cupo)
+unique(votos_coalicion_efectividad$cupo2)
 
-votos_coalicion_efectividad$cupo[votos_coalicion_efectividad$cupo=='Resto de lista']<- "Lis. Apruebo(resto)"
+votos_coalicion_efectividad$cupo2[votos_coalicion_efectividad$cupo2=='Resto de lista']<- "Lis. Apruebo(resto)"
+votos_coalicion_efectividad$cupo2[votos_coalicion_efectividad$cupo2=='Movimientos Soc. Const.']<- "MovimientosSoc.Const."
+
 library(forcats)
 
 votos_coalicion_efectividad$nombres_cc <- str_to_title(votos_coalicion_efectividad$nombres_cc)
 votos_coalicion_efectividad$perct_efectividad <- round(votos_coalicion_efectividad$perct_efectividad,2)
+
 efectividad_general <- ggplot(votos_coalicion_efectividad %>%
-                                mutate(Grupo=fct_reorder(cupo, perct_efectividad, .fun = median, .desc = TRUE)) %>%
+                                mutate(Grupo=fct_reorder(cupo2, perct_efectividad, .fun = median, .desc = TRUE)) %>%
                                 rename(Efectividad=perct_efectividad, Nombre=nombres_cc), 
                               aes(x = Grupo,
                                   y = Efectividad, fill=Grupo)) +geom_boxplot()+ #geom_point(aes(label=Nombre)) +
   scale_y_continuous(limits=c(0,100)) +ggtitle("% de efectividad de votaciones")+ xlab("Alianzas") + ylab("%")+
   theme(axis.text.x=element_text(angle=90, hjust=1, size=9))+
   scale_fill_manual(values = c("steelblue","steelblue","steelblue","steelblue","steelblue",
-                               "steelblue","steelblue","steelblue", "steelblue")) + theme_bw()+ 
-  theme(legend.position = 'none',axis.text.x=element_text(size=16), axis.text.y=element_text(size=15), plot.title = element_text(size=22))
+                               "steelblue","steelblue","steelblue", "steelblue","steelblue")) + theme_bw()+ 
+  theme(legend.position = 'none',axis.text.x=element_text(size=20),
+        axis.text.y=element_text(size=20), plot.title = element_text(size=25))
 
 efectividad_general
 
 
 
-ggsave(plot=efectividad_general,"output/efectividad_general.png", width=20, height = 14)
+ggsave(plot=efectividad_general,"output/efectividad_general.png", width=27, height = 15)
 
 
 
@@ -366,11 +370,11 @@ ggsave(plot=efectividad_general,"output/efectividad_general.png", width=20, heig
 
 tabla_show <- data.frame()
 
-names <- as.character(unique(votos_coalicion_efectividad$cupo))
+names <- as.character(unique(votos_coalicion_efectividad$cupo2))
 
-for (i in 1:9) {
+for (i in 1:10) {
   ldp <- votos_coalicion_efectividad %>%
-    filter(cupo==names[i])
+    filter(cupo2==names[i])
   
   
   df <- data.frame(unclass(summary(ldp$perct_efectividad)), check.names = FALSE, stringsAsFactors = FALSE) %>% 
@@ -392,17 +396,19 @@ tabla_show[,-1] <-round(tabla_show[,-1],2)
 tabla_show
 
 
+writexl::write_xlsx(tabla_show,"output/tabla.xlsx")
+
 
 # tabla interactiva
 
 votos_coalicion_efectividad_tt<- votos_coalicion_efectividad %>%
-  rename(Constituyente=nombres_cc,Cupo=cupo, A_Favor=Aprueba, En_Contra=Rechaza,
+  rename(Constituyente=nombres_cc,Alianza=cupo2, A_Favor=Aprueba, En_Contra=Rechaza,
        Abstenciones=Abstiene,votos_efectivos_A_Favor=veces_aprueba_to_aprobar, 
        votos_efectivos_En_Contra= veces_rechaza_to_rechazar,Votos_Efectivos_General=suma_aprueba_to_aprueba_rechaza_to_rechaza,
        Efectividad=perct_efectividad)
 
 votos_coalicion_efectividad_tt <- votos_coalicion_efectividad_tt %>%
-  select(Constituyente, Cupo, A_Favor, En_Contra,Abstenciones,votos_efectivos_A_Favor,
+  select(Constituyente, Alianza, A_Favor, En_Contra,Abstenciones,votos_efectivos_A_Favor,
          votos_efectivos_En_Contra, Votos_Efectivos_General, Efectividad)
 
 votos_coalicion_efectividad_tt$Efectividad <- round(votos_coalicion_efectividad_tt$Efectividad, 2)
@@ -423,4 +429,4 @@ p
 
 
 
-
+saveWidget(p, file="index.html")
