@@ -2,7 +2,7 @@
 
 Análisis de 162 votaciones de la Convención Constitucional en escenarios de Mayoría Absoluta, Cuatro Septimos, Tres Quintos y Dos Tercios.
 
-**En este repositorio se encuentran disponibles los archivos y y códigos para la reproducibilidad de este trabajo. 
+*En este repositorio se encuentran disponibles los archivos y y códigos para la reproducibilidad de este trabajo. 
 
 Los resultados se dividen en dos partes:
 ### Variación de índice de Influencia y Posicionamiento Ideológico por regla:
